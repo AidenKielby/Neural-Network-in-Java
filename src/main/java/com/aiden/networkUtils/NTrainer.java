@@ -6,53 +6,54 @@ import java.util.ArrayList;
 
 public class NTrainer {
     private Network network;
-    private ArrayList<ArrayList<Double>> targets;
-    private ArrayList<ArrayList<Double>> inputs;
+    private ArrayList<ArrayList<ArrayList<Double>>> targets;
+    private ArrayList<ArrayList<ArrayList<Double>>> inputs;
     private int iterations;
     private int prevPercent = -1;
     private ArrayList<Double> arrayList = new ArrayList<>();
 
-    public NTrainer(Network network, ArrayList<ArrayList<Double>> targets, ArrayList<ArrayList<Double>> inputs, int iterations) {
+    public NTrainer(Network network, ArrayList<ArrayList<ArrayList<Double>>> targets, ArrayList<ArrayList<ArrayList<Double>>> inputs, int iterations) {
         this.network = network;
         this.targets = targets;
         this.inputs = inputs;
         this.iterations = iterations;
     }
 
-    public Network train(){
+    public Network train() throws CloneNotSupportedException {
         int curP = 0;
         for (int i = 0; i < iterations; i++) {
 
-            network.setLearningRate(0.01 / (1 + i / (double) iterations));
+            double decayRate = 0.99;
+            network.setLearningRate(0.01 * Math.pow(decayRate, i / 1000.0));
 
             for (int trainingSample = 0; trainingSample < targets.size(); trainingSample++) {
-                ArrayList<Double> ins = inputs.get(trainingSample);
-                ArrayList<Double> targs = targets.get(trainingSample);
+                ArrayList<ArrayList<Double>> inputBatches = inputs.get(trainingSample);
+                ArrayList<ArrayList<Double>> targetBatches = targets.get(trainingSample);
 
-                // Check if inputs or targets are empty before proceeding
-                if (!(ins.isEmpty() || targs.isEmpty())) {
+                for (int batch = 0; batch < inputBatches.size(); batch++) {
+                    ArrayList<Double> inputBatch = inputBatches.get(batch);
+                    ArrayList<Double> targetBatch = targetBatches.get(batch);
+
+                    if (inputBatch.isEmpty() || targetBatch.isEmpty()) {
+                        System.err.println("Skipping empty input/target pair at index " + trainingSample);
+                        continue;
+                    }
+
                     network.clearInputs();
                     network.clearTargets();
 
-                    for (double input : ins){
+                    for (double input : inputBatch) {
                         network.addInputs(input);
                     }
-                    network.setTargets(new ArrayList<>(targs));
-
-                    // System.out.println(targs);
-                    // System.out.println(!(ins.isEmpty() || targs.isEmpty()));
-                    // System.out.println(ins);
+                    network.setTargets(new ArrayList<>(targetBatch));
 
                     network.forwardPass();
-                    network.backwardPass();
-                }
-                else {
-                    System.err.println("Skipping empty input/target pair at index " + trainingSample);
+                    network.backwardPass(); // This should accumulate gradients
                 }
             }
 
-            curP = (int)(((double)i/iterations)*100);
-            if (curP != prevPercent){
+            curP = (int)(((double)i / iterations) * 100);
+            if (curP != prevPercent) {
                 System.out.println("---------------------- \n" + curP + "%");
                 prevPercent = curP;
                 System.out.println("loss: " + getLoss() + "\n ----------------------");
@@ -62,17 +63,9 @@ public class NTrainer {
                 System.out.println("Iteration " + i + " - Loss: " + getLoss());
             }
 
-            if (Network.roundToDecimal(getLoss(), 1) < 0.5){
-                System.out.println("100%");
-                System.out.println("loss: " + getLoss());
-                network.clearTargets();
-                network.clearInputs();
-                GraphPlotter graphPlotter = new GraphPlotter(arrayList);
-                graphPlotter.setVisible(true);
-                return this.network;
-            }
             arrayList.add(getLoss());
         }
+
         System.out.println("100%");
         System.out.println("loss: " + getLoss());
         network.clearTargets();

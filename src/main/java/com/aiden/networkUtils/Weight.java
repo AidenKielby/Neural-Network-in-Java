@@ -1,6 +1,7 @@
 package com.aiden.networkUtils;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 public class Weight implements Serializable {
     private double weight = 1;
@@ -36,4 +37,5 @@ public class Weight implements Serializable {
     public void setNeuronIndex2(int neuronIndex2) {
         this.neuronIndex2 = neuronIndex2;
     }
+
 }

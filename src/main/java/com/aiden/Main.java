@@ -10,7 +10,7 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws CloneNotSupportedException {
         Random random = new Random();
         Scanner scanner = new Scanner(System.in);  // Create a Scanner object
         System.out.println("Would you like to load a network? (Y/N)");
@@ -45,7 +45,7 @@ public class Main {
         }
 
         else{
-            Network network = new Network(2, 2, 16, 2, "ReLU", 0.00001); //uses He init
+            Network network = new Network(2, 3, 5, 2, "L-ReLU", 0.00001); //uses He init
             ArrayList<ArrayList<Double>> inputs = new ArrayList<>();
             ArrayList<ArrayList<Double>> targets = new ArrayList<>();
             for (int i = 0; i < 1000; i++) {
@@ -72,7 +72,7 @@ public class Main {
                 targets.add(target);
             }
 
-            NTrainer networkTrainer = new NTrainer(network, targets, inputs, 50_000);
+            NTrainer networkTrainer = new NTrainer(network, targets, inputs, 10_000);
             Network network1 = networkTrainer.train();
 
             int correct = 0;
@@ -91,12 +91,12 @@ public class Main {
                 }
 
                 network1.clearInputs();
-                network1.addInputs((x - 499.5) / 499.5);
-                network1.addInputs((y - 499.5) / 499.5);
+                network1.addInputs(x);
+                network1.addInputs(y);
 
                 network1.forwardPass();
                 if (network1.returnLargestOutputInFormOfIndex() == resultIndex) {
-                    System.out.println("YAY, It was correct!");
+                    //System.out.println("YAY, It was correct!");
                     correct ++;
                 }
                 else {

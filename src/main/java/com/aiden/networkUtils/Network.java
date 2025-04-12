@@ -78,6 +78,14 @@ public class Network implements Serializable {
         this.targets = targets;
     }
 
+    public ArrayList<Weight> getWeights() {
+        return weights;
+    }
+
+    public void setWeights(ArrayList<Weight> weights) {
+        this.weights = weights;
+    }
+
     // -----------------------
     private void addNeurons(){
         for (int inputN = 0; inputN < neuronsInInputLayer; inputN++){
@@ -225,7 +233,7 @@ public class Network implements Serializable {
 
     public double leakyReLUDerivativeFromOutput(double output) {
         double alpha = 0.01;  // Keep α small
-        return (output >= 0) ? 1.0 : alpha;
+        return (output > 0) ? 1.0 : alpha;
     }
 
     private double ReLU(double x){
@@ -280,6 +288,7 @@ public class Network implements Serializable {
         double loss = 0;
         for (int i = 0; i < neuronsInOutputLayer; i++) {
             double predicted = neurons.get(neuronsInInputLayer + (neuronsPerHiddenLayer * hiddenLayers) + i).getActivation();
+            predicted = Math.max(1e-9, Math.min(1 - 1e-9, predicted));
             double target = targets.get(i);
             loss -= target * Math.log(predicted + 1e-9);  // Add 1e-9 to avoid log(0)
         }
@@ -425,19 +434,11 @@ public class Network implements Serializable {
                  gradient = error * prevNeuron.getActivation();
              }
 
-             double gradient1 = gradient;
-             double clipValue = 5.0;  // Prevent too-large updates
-             if (gradient1 > clipValue) gradient1 = clipValue;
-             if (gradient1 < -clipValue) gradient1 = -clipValue;
+             gradient = Math.max(-5.0, Math.min(5.0, gradient));
 
-             double weightVal = weight.getWeight();
-             double m = 0, v = 0; // Moving averages
-             double beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8;
-             m = beta1 * m + (1 - beta1) * gradient;
-             v = beta2 * v + (1 - beta2) * gradient * gradient;
-             double mHat = m / (1 - beta1);
-             double vHat = v / (1 - beta2);
-             weight.setWeight(weightVal - learningRate * mHat / (Math.sqrt(vHat) + epsilon));
+             // Update with momentum
+             double newWeight = weight.getWeight() - learningRate * gradient;
+             weight.setWeight(newWeight);
 
          }
     }
